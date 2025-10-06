@@ -1,0 +1,10 @@
+.MainPage {
+    display: flex;
+}
+
+.MainPage_Header{
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
