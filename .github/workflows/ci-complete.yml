@@ -126,22 +126,22 @@ jobs:
     - name: 🐳 Build Docker images
       run: |
         echo "🏗️ Building Docker images..."
-        docker-compose build
+        docker compose build
     
     - name: 🚀 Start containers
       run: |
         echo "🚀 Starting containers..."
-        docker-compose up -d
+        docker compose up -d
         echo "⏳ Waiting for services to start..."
         sleep 20
     
     - name: 📋 Show container status
       run: |
         echo "📋 Container status:"
-        docker-compose ps
+        docker compose ps
         echo ""
         echo "📝 Container logs:"
-        docker-compose logs
+        docker compose logs
     
     - name: 🔍 Health check - Backend
       run: |
@@ -164,8 +164,8 @@ jobs:
       if: always()
       run: |
         echo "🧹 Stopping containers..."
-        docker-compose down
-        docker-compose logs
+        docker compose down
+        docker compose logs
 
   quality:
     name: 📊 Code Quality
