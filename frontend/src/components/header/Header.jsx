@@ -9,7 +9,10 @@ return (
         <div className="Header_Title">
             Prison<span className="Header_Title_Flow">Flow</span>
         </div>
-        <ThemeButton/>
+        <div>   
+            {/* <AdmingButton/> */}
+            <ThemeButton/>
+        </div>
     </div>
 </> 
 )
