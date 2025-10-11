@@ -71,8 +71,6 @@ button:focus-visible {
   }
 }
 
-
-
 :root.dark {
   color: rgba(255, 255, 255, 0.87);        
   background-color: #242424; 
@@ -94,20 +92,20 @@ button:focus-visible {
 }
 
 :root.light {
-  color: #800000;        
-  background-color: #1a0f0f; 
+  color: #000000;        
+  background-color: #FBFFE4; 
 }
 :root.light button {
-  color: #1a0f0f;         
-  background-color: #800000; 
-  border: 1px solid #400000; 
+  color: #FBFFE4;         
+  background-color: #3D8D7A; 
+  border: 1px solid #B3D8A8; 
   transition: all 0.3s ease;
 }
 :root.light button:hover {
-  background-color: #990000;  
-  box-shadow: 0 0 10px #ff0000aa; 
+  background-color: #4e8f80;  
+  box-shadow: 0 0 10px #598b80; 
   transform: translateY(-2px);
-  border-color: #ff4444;          
+  border-color: #598b80;          
 }
 :root.light a:hover {
   color: #ff4d4d; 

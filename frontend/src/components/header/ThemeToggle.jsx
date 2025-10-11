@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { Moon, Beef } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 
 export default function ThemeToggle() {
   const [theme, setTheme] = useState(() =>
@@ -27,8 +27,8 @@ export default function ThemeToggle() {
     justifyContent: "center", // kolor z CSS
     }}
     >
-        {theme === "dark" ? <Moon size={20} /> : <Beef size={20} />}
-        {theme === "dark" ? "Dark" : "Grim"}
+        {theme === "dark" ? <Moon size={20} /> : <Sun size={20} />}
+        {theme === "dark" ? "Dark" : "Light"}
 </button>
   );
 }

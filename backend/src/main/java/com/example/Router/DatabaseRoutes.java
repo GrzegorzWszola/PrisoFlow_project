@@ -38,7 +38,11 @@ public class DatabaseRoutes {
         path("/db", () -> {
             logger.info("Route to databse built: api/db");
             get("/health", DbController::checkHealth);
-            // get("/stats", DbController::getStats);
+            get("/createTable", DbController::createTable);
+            get("/testCreatePrRecord", DbController::testCreatePrRecord);
+            get("/testReadPrRecord", DbController::testReadPrRecord);
+            get("/testDropRecord", DbController::testDropRecord);
+            get("/testDropTable", DbController::testDropTable);
         });
     }
 }
