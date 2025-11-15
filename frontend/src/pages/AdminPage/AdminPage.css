@@ -1,0 +1,159 @@
+* {
+  box-sizing: border-box;
+}
+
+.Admin{
+    width: 100%;
+    padding: 0 2rem 2rem 2rem;
+}
+
+.Admin_Header{
+    display: flex;
+    justify-content: space-between;
+}
+
+.Admin_Header-left{
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+}
+
+.Admin_Header-right{
+    display: flex;
+    align-items: center;
+}
+
+.Admin_Container{
+    display: flex;
+}
+
+.admin-sidebar {
+  transition: width 0.3s ease;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.admin-sidebar.open {
+  width: 280px;
+}
+
+.admin-sidebar.closed {
+  width: 70px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.3s;
+  border-left: 3px solid transparent;
+}
+
+.nav-icon {
+  font-size: 24px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.nav-label {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.admin-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+.content-section {
+  border-radius: 8px;
+  padding: 25px;
+}
+
+.content-section h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.content-section h3 {
+  font-size: 18px;
+  margin: 20px 0 15px;
+  font-weight: 600;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.backup-page {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: var(--button-bg);
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
+}
+
+.backup-page h1 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.backup-page button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background 0.2s ease;
+}
+
+.backup-page button:hover {
+    background-color: #0056b3;
+}
+
+.create-btn {
+    display: block;
+    margin: 0 auto 20px auto;
+}
+
+.backup-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.backup-item {
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    background-color: var(--bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.backup-buttons button {
+    margin-left: 6px;
+}

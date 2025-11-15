@@ -4,9 +4,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
@@ -14,8 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.example.Config.DatabaseConfig;
-import com.example.Objects.PrisonRecord;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.Objects.Prison;
+
 
 import io.javalin.http.Context;
 
@@ -61,191 +63,185 @@ public class DbController{
         }
     }
 
-    public static void createTable(Context ctx) {
-        logger.info("Redirected to checkHealth: api/db/createTable");
-        String sql = """
-            CREATE TABLE prisons (
-                prison_id SERIAL PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                location VARCHAR(150),
-                capacity INT CHECK (capacity >= 0),
-                security_level VARCHAR(50),
-                warden_name VARCHAR(100),
-                contact_phone VARCHAR(20),
-                contact_email VARCHAR(100),
-                established_year INT CHECK (established_year >= 1800 AND established_year <= EXTRACT(YEAR FROM CURRENT_DATE)),
-                notes TEXT
-            );
-        """;
-
-        try (Connection conn = ds.getConnection();
-            Statement stmt = conn.createStatement()) {
-
-            logger.info("Database connection established — creating table...");
-            stmt.executeUpdate(sql);
-
-            ctx.status(200).result("Table 'kierowcy' created successfully!");
-            logger.info("Table 'kierowcy' created or already exists.");
-
-        } catch (SQLException e) {
-            logger.error("Error while creating table: ", e);
-            ctx.status(500).result("Database error: " + e.getMessage());
-        }
-    }
-
-    public static void testCreatePrRecord(Context ctx) {
-        logger.info("Redirected to checkHealth: api/db/testCreatePrRecord");
-
-        String insertSQL = """
-            INSERT INTO prisons
-            (name, location, capacity, security_level, warden_name, contact_phone, contact_email, established_year, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """;
-
-        try (Connection conn = ds.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(insertSQL)) {
-
-            // Przykładowe dane — można potem pobierać z requestu (ctx.formParam / ctx.bodyAsClass)
-            stmt.setString(1, "Central Prison Wrocław");
-            stmt.setString(2, "Wrocław, ul. Więzienna 12");
-            stmt.setInt(3, 1200);
-            stmt.setString(4, "High");
-            stmt.setString(5, "Jan Kowalski");
-            stmt.setString(6, "+48 123 456 789");
-            stmt.setString(7, "kontakt@wiezienie.pl");
-            stmt.setInt(8, 1954);
-            stmt.setString(9, "Największe więzienie w regionie.");
-
-            int rows = stmt.executeUpdate();
-
-            if (rows > 0) {
-                ctx.status(201).result("Prison record created successfully!");
-                logger.info("Inserted new prison record into DB");
-            } else {
-                ctx.status(500).result("No record inserted!");
-                logger.warn("Insert statement executed but no rows affected");
-            }
-
-        } catch (SQLException e) {
-            logger.error("Couldn't insert record into database: ", e);
-            ctx.status(500).result("Database error: " + e.getMessage());
-        }
-    }
-
-    public static void testReadPrRecord(Context ctx) {
+    public static List<Prison> getPrisonsFromDb(Context ctx){
         try (Connection conn = ds.getConnection()) {
-        String sql = "SELECT * FROM prisons ORDER BY prison_id";
-        List<PrisonRecord> prisons = new ArrayList<>();
-        
-            try (Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(sql)) {
-                
-                while (rs.next()) {
-                    PrisonRecord prison = new PrisonRecord();
-                    prison.setPrisonId(rs.getInt("prison_id"));
+            List<Prison> prisonList = new ArrayList<Prison>();
+            String sql = "SELECT * FROM prisons";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)){
+                ResultSet rs = stmt.executeQuery();
+
+                while(rs.next()){
+                    Prison prison = new Prison();
+
+                    prison.setId(rs.getInt("prison_id"));
                     prison.setName(rs.getString("name"));
                     prison.setLocation(rs.getString("location"));
-                    
-                    // Obsługa NULL dla Integer
-                    int capacity = rs.getInt("capacity");
-                    prison.setCapacity(rs.wasNull() ? null : capacity);
-                    
+                    prison.setCapacity(rs.getInt("capacity"));
                     prison.setSecurityLevel(rs.getString("security_level"));
-                    prison.setWardenName(rs.getString("warden_name"));
-                    prison.setContactPhone(rs.getString("contact_phone"));
-                    prison.setContactEmail(rs.getString("contact_email"));
-                    
-                    int year = rs.getInt("established_year");
-                    prison.setEstablishedYear(rs.wasNull() ? null : year);
-                    
-                    prison.setNotes(rs.getString("notes"));
-                    
-                    prisons.add(prison);
+                    java.sql.Date sqlDate = rs.getDate("opening_date");
+                    if (sqlDate != null) {
+                        prison.setDate(sqlDate.toLocalDate());
+                    }
+                    prison.setNumOfCells(rs.getInt("number_of_cells"));
+                    prison.setIsActive(rs.getBoolean("is_active"));
+
+                    prisonList.add(prison);
                 }
 
-                ObjectMapper mapper = new ObjectMapper();
-                String json = mapper.writeValueAsString(prisons);
-
-                ctx.status(200)
-                    .contentType("application/json")
-                    .result(json);            
-                logger.info("Successfully retrieved {} prison records", prisons.size());
-            }  
-        } catch(Exception e) {
-            logger.error("Error reading prison records: ", e);
-            ctx.status(500)
-            .contentType("application/json")
-            .result("{\"error\": \"" + e.getMessage().replace("\"", "\\\"") + "\"}");
+                return prisonList;
+            } 
+        } catch (Exception e) {
+            logger.error("Couldn't connect to databse: ", e);
+            ctx.status(500).result("Database connection failed: " + e.getMessage());
+            return null;
         }
     }
 
-    public static void testDropRecord(Context ctx) {
-        logger.info("Deleting prison record: api/db/testDropRecord");
+    public static void prisonInfo(Context ctx) {
+        logger.info("Redirected to prisonInfo: api/db/prisonInfo");
         
-        try (Connection conn = ds.getConnection()) {
-            // Pobierz ID z parametru query lub path
-            String idParam = "1"; // lub ctx.pathParam("id")
-            
-            if (idParam == null || idParam.isEmpty()) {
-                ctx.status(400)
-                .contentType("application/json")
-                .result("{\"error\": \"Prison ID is required\"}");
-                return;
-            }
-            
-            int prisonId = Integer.parseInt(idParam);
-            String sql = "DELETE FROM prisons WHERE prison_id = ?";
-            
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setInt(1, prisonId);
-                int rowsAffected = pstmt.executeUpdate();
-                
-                if (rowsAffected > 0) {
-                    ctx.status(200)
-                    .contentType("application/json")
-                    .result("{\"message\": \"Prison record deleted successfully\", \"id\": " + prisonId + "}");
-                    logger.info("Deleted prison record with ID: {}", prisonId);
-                } else {
-                    ctx.status(404)
-                    .contentType("application/json")
-                    .result("{\"error\": \"Prison record not found\", \"id\": " + prisonId + "}");
-                }
-            }
-            
-        } catch (NumberFormatException e) {
-            logger.error("Invalid prison ID format: ", e);
-            ctx.status(400)
-            .contentType("application/json")
-            .result("{\"error\": \"Invalid prison ID format\"}");
-        } catch(Exception e) {
-            logger.error("Error deleting prison record: ", e);
-            ctx.status(500)
-            .contentType("application/json")
-            .result("{\"error\": \"" + e.getMessage().replace("\"", "\\\"") + "\"}");
+        List<Prison> prisonList = getPrisonsFromDb(ctx);
+
+        if (!prisonList.isEmpty() || prisonList == null){
+            ctx.status(200).json(prisonList);
+        } else {
+            ctx.status(404).json(Map.of("error", "Error with prisons table"));
         }
     }
 
-    public static void testDropTable(Context ctx) {
-        logger.info("Dropping prisons table: api/db/testDropTable");
-        
+    public static void dashboard(Context ctx) {
+        logger.info("Redirected to dashboard: api/db/dashboard");
+        List<Map<String, Object>> prisonsData = new ArrayList<>();
+        List<Map<String, Object>> visitsData = new ArrayList<>();
+        List<Map<String, Object>> incidentData = new ArrayList<>();
+
         try (Connection conn = ds.getConnection()) {
-            String sql = "DROP TABLE IF EXISTS prisons CASCADE";
+            String sql = """
+                SELECT 
+                    p.prison_id,
+                    p.name,
+                    p.location,
+                    p.capacity,
+                    p.security_level,
+                    COUNT(c.criminal_id) as current_inmates,
+                    CASE 
+                        WHEN p.capacity > 0 THEN ROUND((COUNT(c.criminal_id)::numeric / p.capacity::numeric) * 100, 2)
+                        ELSE 0
+                    END as occupancy_percentage
+                FROM prisons p
+                LEFT JOIN criminals c ON c.prison_id = p.prison_id
+                WHERE p.is_active = true
+                GROUP BY p.prison_id, p.name, p.location, p.capacity, p.security_level
+                ORDER BY occupancy_percentage DESC
+            """;
             
-            try (Statement stmt = conn.createStatement()) {
-                stmt.executeUpdate(sql);
-                
-                ctx.status(200)
-                .contentType("application/json")
-                .result("{\"message\": \"Prisons table dropped successfully\"}");
-                
-                logger.info("Prisons table dropped successfully");
+            try (PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {    
+                while(rs.next()) {
+                    Map<String, Object> prisonStats = new HashMap<>();
+                    prisonStats.put("id", rs.getInt("prison_id"));
+                    prisonStats.put("name", rs.getString("name"));
+                    prisonStats.put("location", rs.getString("location"));
+                    prisonStats.put("capacity", rs.getInt("capacity"));
+                    prisonStats.put("securityLevel", rs.getString("security_level"));
+                    prisonStats.put("currentInmates", rs.getInt("current_inmates"));
+                    prisonStats.put("occupancyPercentage", rs.getDouble("occupancy_percentage"));
+                    
+                    prisonsData.add(prisonStats);
+                }               
             }
-            
-        } catch(Exception e) {
-            logger.error("Error dropping prisons table: ", e);
-            ctx.status(500)
-            .contentType("application/json")
-            .result("{\"error\": \"" + e.getMessage().replace("\"", "\\\"") + "\"}");
+
+            sql = 
+                """
+                SELECT 
+                    c.first_name, 
+                    c.last_name, 
+                    p.name AS prison_name, 
+                    pv.visitor_first_name, 
+                    pv.visitor_last_name, 
+                    pv.relationship,
+                    pv.visit_datetime
+                FROM prison_visits pv
+                LEFT JOIN criminals c ON pv.criminal_id = c.criminal_id
+                LEFT JOIN prisons p ON pv.prison_id = p.prison_id
+                WHERE pv.is_approved = TRUE
+                ORDER BY pv.visit_datetime
+                LIMIT 3;
+                """;
+
+            try(PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()){
+                    Map<String, Object> visitStats = new HashMap<>();
+                    visitStats.put("criminal_first_name", rs.getString("first_name"));
+                    visitStats.put("criminal_last_name", rs.getString("last_name"));
+                    visitStats.put("prison_name", rs.getString("prison_name"));
+                    visitStats.put("visitor_first_name", rs.getString("visitor_first_name"));
+                    visitStats.put("visitor_last_name", rs.getString("visitor_last_name"));
+                    visitStats.put("relationship", rs.getString("relationship"));
+                    java.sql.Timestamp tsp = rs.getTimestamp("visit_datetime");
+                    if (tsp != null){
+                        visitStats.put("visit_datetime", tsp);
+                    }
+
+                    visitsData.add(visitStats);
+                }
+            }
+
+            sql = 
+                """
+                SELECT
+                    pi.incident_id,
+                    p.name AS prison_name, 
+                    c.first_name AS criminal_first_name,
+                    c.last_name AS criminal_last_name,
+                    o.first_name AS officer_first_name,
+                    o.last_name AS officer_last_name,
+                    pi.incident_datetime,
+                    pi.incident_type,
+                    pi.description,
+                    pi.severity
+                FROM prison_incidents pi
+                LEFT JOIN criminals c ON c.criminal_id = pi.criminal_id
+                LEFT JOIN prisons p ON p.prison_id = pi.prison_id
+                LEFT JOIN officers o ON o.officer_id = pi.officer_id
+                ORDER BY pi.incident_datetime
+                LIMIT 3
+                """;
+
+            try(PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()){
+                    Map<String, Object> incidentStats = new HashMap<>();
+                    incidentStats.put("incident_id", rs.getInt("incident_id"));
+                    incidentStats.put("prison_name", rs.getString("prison_name"));
+                    incidentStats.put("criminal_first_name", rs.getString("criminal_first_name"));
+                    incidentStats.put("criminal_last_name", rs.getString("criminal_last_name"));
+                    incidentStats.put("officer_first_name", rs.getString("officer_first_name"));
+                    incidentStats.put("officer_last_name", rs.getString("officer_last_name"));
+                    java.sql.Timestamp tsp = rs.getTimestamp("incident_datetime");
+                    if (tsp != null){
+                        incidentStats.put("incident_datetime", tsp);
+                    }
+                    incidentStats.put("incident_type", rs.getString("incident_type"));
+                    incidentStats.put("descryption", rs.getString("description"));
+                    incidentStats.put("severity", rs.getString("severity"));
+
+                    incidentData.add(incidentStats);
+                }
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("prisons", prisonsData);
+            response.put("visits", visitsData);
+            response.put("incidents", incidentData);
+            ctx.status(200).json(response);
+        } catch (SQLException e) {
+            logger.error("Database error in dashboard: ", e);
+            ctx.status(500).json(Map.of("error", "Database error", "message", e.getMessage()));
+            return;
         }
+
+
     }
 }

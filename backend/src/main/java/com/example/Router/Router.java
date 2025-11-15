@@ -36,7 +36,9 @@ public class Router {
             path("/api", () -> {
                 // Database requests
                 DatabaseRoutes.register();
-                NonDbRoutes.register();
+                UserRoutes.register();
+                AdminRoutes.register();
+                PrisonRoutes.register();
             });
         });
     }

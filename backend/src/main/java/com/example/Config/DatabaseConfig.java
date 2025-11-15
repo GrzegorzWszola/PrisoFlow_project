@@ -52,7 +52,7 @@ public class DatabaseConfig {
         // Setting up connection to database
         config.setJdbcUrl(System.getenv().getOrDefault(
             "DB_URL", 
-            "jdbc:postgresql://localhost:5432/mydb"
+            "jdbc:postgresql://localhost:5432/prisonflow"
         ));
         config.setUsername(System.getenv().getOrDefault("DB_USER", "postgres"));
         config.setPassword(System.getenv().getOrDefault("DB_PASS", "postgres"));

@@ -3,7 +3,7 @@ package com.example.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.example.Controllers.NonDbController;
+import com.example.Controllers.UserController;
 import static io.javalin.apibuilder.ApiBuilder.*;
 
 /**
@@ -20,7 +20,7 @@ import static io.javalin.apibuilder.ApiBuilder.*;
  *
  * @see com.example.Controllers.DbController
  */
-public class NonDbRoutes {
+public class UserRoutes {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseRoutes.class);
 
      /**
@@ -35,8 +35,12 @@ public class NonDbRoutes {
     public static void register() {
         path("/user", () -> {
             logger.info("Route to non databse built: api/user");
-            get("/hello", NonDbController::helloMsg);
-            // get("/stats", DbController::getStats);
+            get("/hello", UserController::helloMsg);
+            post("/login", UserController::login);
+            get("/allUsers", UserController::getAllUsers);
+            post("/addUser", UserController::addUser);
+            delete("/deleteUser/{userId}", UserController::deleteUser);
+            post("/editUser/{userId}", UserController::editUser);
         });
     }
 }

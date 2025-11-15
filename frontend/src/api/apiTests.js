@@ -39,101 +39,37 @@ export const testDbConnection = async () => {
 };
 
 /**
- * Calls endpoint `/api/db/createTable` and returnes the text confiramtion
+ * Calls endpoint `/api/user/login` and returns the response
  *
  * @async
- * @function    testCreateTable
- * @returns     {Promise<string>}   Response from server
- * @throws      {Error}             If the connection fails
+ * @function    login
+ * @param       {string} username - Username
+ * @param       {string} password - Password
+ * @returns     {Promise<object>} Response from server
+ * @throws      {Error} If the connection fails
  */
-export const testCreateTable = async () => {
+export const login = async (username, password) => {
     try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/db/createTable`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+        });
 
-    if (!res.ok) throw new Error("Call error");
-    const data = await res.text(); 
-    console.log("Database response:", data);
+        const response = await res.json(); 
+        if (!res.ok) {
+            throw new Error(response.error || 'Login failed');
+        }
+        
+        console.log("Database response:", response);
+        return response;
     } catch (err) {
-    console.error("❌ Error while connecting to the database:", err);
-    }
-};
-
-/**
- * Calls endpoint `/api/db/testCreatePrRecord` and returnes the text confiramtion
- *
- * @async
- * @function    testCreatePrRecord
- * @returns     {Promise<string>}   Response from server
- * @throws      {Error}             If the connection fails
- */
-export const testCreatePrRecord = async () => {
-    try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/db/testCreatePrRecord`);
-
-    if (!res.ok) throw new Error("Call error");
-    const data = await res.text(); 
-    console.log("Database response:", data);
-    } catch (err) {
-    console.error("❌ Error while connecting to the database:", err);
-    }
-};
-
-/**
- * Calls endpoint `/api/db/testReadPrRecord` and returnes the text confiramtion
- *
- * @async
- * @function    testReadPrRecord
- * @returns     {Promise<string>}   Response from server
- * @throws      {Error}             If the connection fails
- */
-export const testReadPrRecord = async () => {
-    try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/db/testReadPrRecord`);
-
-    if (!res.ok) throw new Error("Call error");
-    const data = await res.json(); 
-    console.log("Database response:", data);
-    } catch (err) {
-    console.error("❌ Error while connecting to the database:", err);
-    }
-};
-
-/**
- * Calls endpoint `/api/db/testDropRecord` and returnes the text confiramtion
- *
- * @async
- * @function    testDropRecord
- * @returns     {Promise<string>}   Response from server
- * @throws      {Error}             If the connection fails
- */
-export const testDropRecord = async () => {
-    try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/db/testDropRecord`);
-
-    if (!res.ok) throw new Error("Call error");
-    const data = await res.text(); 
-    console.log("Database response:", data);
-    } catch (err) {
-    console.error("❌ Error while connecting to the database:", err);
-    }
-};
-
-/**
- * Calls endpoint `/api/db/testDropTable` and returnes the text confiramtion
- *
- * @async
- * @function    testDropTable
- * @returns     {Promise<string>}   Response from server
- * @throws      {Error}             If the connection fails
- */
-export const testDropTable = async () => {
-    try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/db/testDropTable`);
-
-    if (!res.ok) throw new Error("Call error");
-    const data = await res.text(); 
-    console.log("Database response:", data);
-    } catch (err) {
-    console.error("❌ Error while connecting to the database:", err);
+        console.error("Error while connecting to the backend", err);
+        throw err;
     }
 };
