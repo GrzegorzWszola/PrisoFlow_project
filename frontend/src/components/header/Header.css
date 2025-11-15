@@ -3,14 +3,40 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 2rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
 }
 
 .Header_Title {
   font-size: 2em;
   font-weight: bold;
+  text-decoration: none;
+  color: inherit;
 }
 
 .Header_Title_Flow {
   color: #990000;
   font-size: 1.2em;
+}
+
+.Header_Title:hover {
+  text-decoration: none; 
+}
+
+.Header_Title:visited {
+  color: inherit; 
+}
+
+.Header_Nav {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+.logout_component {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }

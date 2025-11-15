@@ -1,10 +1,16 @@
 .MainPage {
     display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .MainPage_Header{
     width: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
+}
+
+.MainPage_Routes{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }

@@ -12,7 +12,9 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  transition: background-color 0.3s, color 0.3s;
+  transition: background-color 0.3s, color 0.3s; 
+
+  --button-background: #3D8D7A;
 }
 
 a {
@@ -72,9 +74,23 @@ button:focus-visible {
 }
 
 :root.dark {
-  color: rgba(255, 255, 255, 0.87);        
-  background-color: #242424; 
+  --button-bg: #1a1a1a;
+  --button-txt-col: rgba(255, 255, 255, 0.87);
+  --button-hover-bg: #990000;
+  --bg: #242424;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: var(--bg);
 }
+
+:root.light {
+  --button-bg: #3D8D7A;
+  --button-txt-col: #FBFFE4;
+  --button-hover-bg: #4e8f80;
+  --bg: #FBFFE4;
+  color: #1a1a1a;
+  background-color: var(--bg);
+}
+
 :root.dark button {
   color: rgba(255, 255, 255, 0.87);;         
   background-color: #1a1a1a; 
@@ -91,10 +107,6 @@ button:focus-visible {
   color: #ff4d4d; 
 }
 
-:root.light {
-  color: #000000;        
-  background-color: #FBFFE4; 
-}
 :root.light button {
   color: #FBFFE4;         
   background-color: #3D8D7A; 
@@ -109,4 +121,12 @@ button:focus-visible {
 }
 :root.light a:hover {
   color: #ff4d4d; 
+}
+
+:root.light input {
+  background-color: #4e8f80;
+}
+
+:root.light input::placeholder {
+  color: #FBFFE4;
 }

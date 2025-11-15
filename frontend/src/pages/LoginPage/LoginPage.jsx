@@ -1,14 +1,44 @@
 import React, { useState } from 'react';
+import { useAuth } from "../../auth/AuthContext.jsx"
+import { useNavigate } from 'react-router-dom';
+import { login as apiLogin } from "../../api/apiTests.js"
 import "./LoginPage.css"
 
 export default function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login:', { username, password });
-    alert('Logowanie!');
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await apiLogin(username, password);
+      
+      login({
+        username: response.username,
+        email: response.email,
+        token: response.token,
+        role: response.role
+      });
+      
+      if (response.role == 'admin') {
+        navigate('/admin')
+      } else {
+        navigate('/');
+      }
+      
+    } catch (err) {
+      setError(err.message || 'Błąd logowania');
+      console.error('Login failed:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
