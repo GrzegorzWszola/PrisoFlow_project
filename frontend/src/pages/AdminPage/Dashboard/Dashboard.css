@@ -1,0 +1,115 @@
+.dashboard{
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+  margin: 0 auto;
+  width: 100%;
+}
+
+.title {
+  font-size: 1.875rem; 
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+/* Karta więzienia */
+.prison-card {
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s ease;
+  margin-bottom: 1rem;
+  background-color: var(--button-bg);
+  color: var(--button-txt-col);
+  width: 100%;
+}
+
+.prison-card:hover {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+/* Nagłówek karty */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.prison-name {
+  font-size: 1.25rem; /* xl */
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.prison-location {
+  font-size: 0.875rem; /* sm */
+}
+
+/* Kolor procentu w nagłówku */
+.occupancy {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Kolory procentu (dynamicznie przez getTextColor) */
+.occupancy-green { color: #10b981; }
+.occupancy-yellow { color: #f59e0b; }
+.occupancy-red { color: #ef4444; }
+
+/* Pasek postępu */
+.progress-section {
+  margin-bottom: 0.75rem;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 1rem; /* 16px */
+  background-color: #e5e7eb; /* gray-200 */
+  border-radius: 9999px; /* full */
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.5rem;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Kolory paska postępu (dynamicznie przez getProgressColor) */
+.progress-fill.green { background-color: #10b981; }
+.progress-fill.yellow { background-color: #f59e0b; }
+.progress-fill.red { background-color: #ef4444; }
+
+/* Dodatkowe info */
+.details {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+}
+
+.label {
+  font-weight: 500;
+}
+
+.overcapacity {
+  color: #dc2626; /* red-600 */
+  font-weight: 600;
+}

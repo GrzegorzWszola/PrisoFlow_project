@@ -47,7 +47,7 @@ public class App {
         // Start listening on "0.0.0.0" port 7000
         });
 
-        // Create router to route the traffic
+        // Initialize router to route the traffic
         Router.configure(app);
 
         app.start("0.0.0.0", 7000);
