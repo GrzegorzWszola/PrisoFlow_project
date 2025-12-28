@@ -35,12 +35,13 @@ public class UserRoutes {
     public static void register() {
         path("/user", () -> {
             logger.info("Route to non databse built: api/user");
-            get("/hello", UserController::helloMsg);
-            post("/login", UserController::login);
-            get("/allUsers", UserController::getAllUsers);
-            post("/addUser", UserController::addUser);
-            delete("/deleteUser/{userId}", UserController::deleteUser);
-            post("/editUser/{userId}", UserController::editUser);
+            UserController userController = new UserController();
+            get("/hello", userController::helloMsg);
+            post("/login", userController::login);
+            get("/allUsers", userController::getAllUsers);
+            post("/addUser", userController::addUser);
+            delete("/deleteUser/{userId}", userController::deleteUser);
+            post("/editUser/{userId}", userController::editUser);
         });
     }
 }

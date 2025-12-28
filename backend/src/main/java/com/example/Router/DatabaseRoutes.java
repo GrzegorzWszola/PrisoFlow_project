@@ -37,9 +37,10 @@ public class DatabaseRoutes {
     public static void register() {
         path("/db", () -> {
             logger.info("Route to databse built: api/db");
-            get("/health", DbController::checkHealth);
-            get("/prisonInfo", DbController::prisonInfo);
-            get("/dashboard", DbController::dashboard);
+            DbController dbController = new DbController();
+            get("/health", dbController::checkHealth);
+            get("/prisonInfo", dbController::prisonInfo);
+            get("/dashboard", dbController::dashboard);
         });
     }
 }

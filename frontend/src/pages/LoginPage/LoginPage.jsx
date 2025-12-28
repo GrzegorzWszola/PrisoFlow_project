@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from "../../auth/AuthContext.jsx"
 import { useNavigate } from 'react-router-dom';
 import { login as apiLogin } from "../../api/apiTests.js"
+import { toast } from 'react-toastify';
 import "./LoginPage.css"
 
 export default function LoginPage() {
@@ -19,14 +20,14 @@ export default function LoginPage() {
 
     try {
       const response = await apiLogin(username, password);
-      
+
       login({
         username: response.username,
         email: response.email,
         token: response.token,
         role: response.role
       });
-      
+
       if (response.role == 'admin') {
         navigate('/admin')
       } else {
@@ -34,7 +35,7 @@ export default function LoginPage() {
       }
       
     } catch (err) {
-      setError(err.message || 'Błąd logowania');
+      toast.error(err.message || 'Błąd logowania');
       console.error('Login failed:', err);
     } finally {
       setLoading(false);

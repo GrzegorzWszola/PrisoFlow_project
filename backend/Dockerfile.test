@@ -1,0 +1,10 @@
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /app
+
+# 1. Kopiujemy tylko pom.xml i pobieramy zależności (to zostanie zapamiętane w cache)
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# 2. Kopiujemy kod i odpalamy testy
+COPY src ./src
+CMD ["mvn", "test"]

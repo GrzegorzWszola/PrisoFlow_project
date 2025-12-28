@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import com.example.Config.DatabaseConfig;
 import com.example.Objects.Prison;
 
-
 import io.javalin.http.Context;
 
 /**
@@ -29,15 +28,32 @@ import io.javalin.http.Context;
  * database-related operations, ensuring backend connectivity and proper
  * error handling.
  *
- * <p>All database connections are acquired through the shared
- * {@link DatabaseConfig#getDataSource()} instance.
+ * <p>All database connections are acquired through the injected
+ * {@link DataSource} instance.
  * 
  * @see com.example.Router.DatabaseRoutes
  */
-public class DbController{
-    // Create data source
-    private static final DataSource ds = DatabaseConfig.getDataSource();
-    private static final Logger logger = LoggerFactory.getLogger(DbController.class);
+public class DbController {
+    private final DataSource dataSource;
+    private final Logger logger;
+
+    /**
+     * Constructor with dependency injection for testing.
+     *
+     * @param dataSource the data source to use for database connections
+     */
+    public DbController(DataSource dataSource) {
+        this.dataSource = dataSource;
+        this.logger = LoggerFactory.getLogger(DbController.class);
+    }
+
+    /**
+     * Default constructor for production use.
+     * Uses the default DataSource from DatabaseConfig.
+     */
+    public DbController() {
+        this(DatabaseConfig.getDataSource());
+    }
 
     /**
      * Checks the health of the database connection.
@@ -52,25 +68,31 @@ public class DbController{
      *
      * @throws RuntimeException if the database connection cannot be established
      */
-    public static void checkHealth(Context ctx) {
+    public void checkHealth(Context ctx) {
         logger.info("Redirected to checkHealth: api/db/health");
-        try (Connection conn = ds.getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
             logger.info("Database connection healthy");
             ctx.status(200).result("Database connection is healthy!");
         } catch(Exception e) {
-            logger.error("Couldn't connect to databse: ", e);
+            logger.error("Couldn't connect to database: ", e);
             ctx.status(500).result("Database connection failed: " + e.getMessage());
         }
     }
 
-    public static List<Prison> getPrisonsFromDb(Context ctx){
-        try (Connection conn = ds.getConnection()) {
-            List<Prison> prisonList = new ArrayList<Prison>();
+    /**
+     * Retrieves all prisons from the database.
+     *
+     * @param ctx the {@link Context} object
+     * @return a list of {@link Prison} objects, or null if an error occurs
+     */
+    public List<Prison> getPrisonsFromDb(Context ctx) {
+        try (Connection conn = dataSource.getConnection()) {
+            List<Prison> prisonList = new ArrayList<>();
             String sql = "SELECT * FROM prisons";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 ResultSet rs = stmt.executeQuery();
 
-                while(rs.next()){
+                while(rs.next()) {
                     Prison prison = new Prison();
 
                     prison.setId(rs.getInt("prison_id"));
@@ -91,56 +113,60 @@ public class DbController{
                 return prisonList;
             } 
         } catch (Exception e) {
-            logger.error("Couldn't connect to databse: ", e);
+            logger.error("Couldn't connect to database: ", e);
             ctx.status(500).result("Database connection failed: " + e.getMessage());
             return null;
         }
     }
 
-    public static void prisonInfo(Context ctx) {
+    /**
+     * Endpoint to retrieve prison information.
+     *
+     * @param ctx the {@link Context} object
+     */
+    public void prisonInfo(Context ctx) {
         logger.info("Redirected to prisonInfo: api/db/prisonInfo");
         
         List<Prison> prisonList = getPrisonsFromDb(ctx);
 
-        if (!prisonList.isEmpty() || prisonList == null){
+        if (prisonList != null && !prisonList.isEmpty()) {
             ctx.status(200).json(prisonList);
         } else {
             ctx.status(404).json(Map.of("error", "Error with prisons table"));
         }
     }
 
-    public static void dashboard(Context ctx) {
+    /**
+     * Endpoint to retrieve dashboard data including prisons, visits, and incidents.
+     *
+     * @param ctx the {@link Context} object
+     */
+    public void dashboard(Context ctx) {
         logger.info("Redirected to dashboard: api/db/dashboard");
         List<Map<String, Object>> prisonsData = new ArrayList<>();
         List<Map<String, Object>> visitsData = new ArrayList<>();
         List<Map<String, Object>> incidentData = new ArrayList<>();
 
-        try (Connection conn = ds.getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
+            
             String sql = """
-                SELECT 
+                SELECT   
                     p.prison_id,
-                    p.name,
+                    p.prison_name,
                     p.location,
                     p.capacity,
                     p.security_level,
-                    COUNT(c.criminal_id) as current_inmates,
-                    CASE 
-                        WHEN p.capacity > 0 THEN ROUND((COUNT(c.criminal_id)::numeric / p.capacity::numeric) * 100, 2)
-                        ELSE 0
-                    END as occupancy_percentage
-                FROM prisons p
-                LEFT JOIN criminals c ON c.prison_id = p.prison_id
-                WHERE p.is_active = true
-                GROUP BY p.prison_id, p.name, p.location, p.capacity, p.security_level
-                ORDER BY occupancy_percentage DESC
+                    p.current_inmates,
+                    p.occupancy_percentage    
+                FROM public.view_prison_occupancy p
             """;
-            
+
             try (PreparedStatement stmt = conn.prepareStatement(sql);
                 ResultSet rs = stmt.executeQuery()) {    
                 while(rs.next()) {
                     Map<String, Object> prisonStats = new HashMap<>();
                     prisonStats.put("id", rs.getInt("prison_id"));
-                    prisonStats.put("name", rs.getString("name"));
+                    prisonStats.put("name", rs.getString("prison_name"));
                     prisonStats.put("location", rs.getString("location"));
                     prisonStats.put("capacity", rs.getInt("capacity"));
                     prisonStats.put("securityLevel", rs.getString("security_level"));
@@ -151,8 +177,7 @@ public class DbController{
                 }               
             }
 
-            sql = 
-                """
+            sql = """
                 SELECT 
                     c.first_name, 
                     c.last_name, 
@@ -166,12 +191,12 @@ public class DbController{
                 LEFT JOIN prisons p ON pv.prison_id = p.prison_id
                 WHERE pv.is_approved = TRUE
                 ORDER BY pv.visit_datetime
-                LIMIT 3;
-                """;
+                LIMIT 3
+            """;
 
             try(PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery()) {
-                while(rs.next()){
+                ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
                     Map<String, Object> visitStats = new HashMap<>();
                     visitStats.put("criminal_first_name", rs.getString("first_name"));
                     visitStats.put("criminal_last_name", rs.getString("last_name"));
@@ -180,7 +205,7 @@ public class DbController{
                     visitStats.put("visitor_last_name", rs.getString("visitor_last_name"));
                     visitStats.put("relationship", rs.getString("relationship"));
                     java.sql.Timestamp tsp = rs.getTimestamp("visit_datetime");
-                    if (tsp != null){
+                    if (tsp != null) {
                         visitStats.put("visit_datetime", tsp);
                     }
 
@@ -188,44 +213,36 @@ public class DbController{
                 }
             }
 
-            sql = 
-                """
+            sql = """
                 SELECT
-                    pi.incident_id,
-                    p.name AS prison_name, 
-                    c.first_name AS criminal_first_name,
-                    c.last_name AS criminal_last_name,
-                    o.first_name AS officer_first_name,
-                    o.last_name AS officer_last_name,
-                    pi.incident_datetime,
-                    pi.incident_type,
-                    pi.description,
-                    pi.severity
-                FROM prison_incidents pi
-                LEFT JOIN criminals c ON c.criminal_id = pi.criminal_id
-                LEFT JOIN prisons p ON p.prison_id = pi.prison_id
-                LEFT JOIN officers o ON o.officer_id = pi.officer_id
-                ORDER BY pi.incident_datetime
-                LIMIT 3
-                """;
+                    incident_id,
+                    incident_datetime,
+                    prison_name,
+                    incident_type,
+                    severity,
+                    criminal_involved,
+                    officer_involved,
+                    description
+                FROM view_recent_incidents
+            """;
 
             try(PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery()) {
-                while(rs.next()){
+                ResultSet rs = stmt.executeQuery()) {
+                while(rs.next()) {
                     Map<String, Object> incidentStats = new HashMap<>();
                     incidentStats.put("incident_id", rs.getInt("incident_id"));
                     incidentStats.put("prison_name", rs.getString("prison_name"));
-                    incidentStats.put("criminal_first_name", rs.getString("criminal_first_name"));
-                    incidentStats.put("criminal_last_name", rs.getString("criminal_last_name"));
-                    incidentStats.put("officer_first_name", rs.getString("officer_first_name"));
-                    incidentStats.put("officer_last_name", rs.getString("officer_last_name"));
+                    incidentStats.put("incident_type", rs.getString("incident_type"));
+                    incidentStats.put("severity", rs.getString("severity"));
+                    incidentStats.put("criminal_involved", rs.getString("criminal_involved"));
+                    incidentStats.put("officer_involved", rs.getString("officer_involved"));
+                    
                     java.sql.Timestamp tsp = rs.getTimestamp("incident_datetime");
-                    if (tsp != null){
+                    if (tsp != null) {
                         incidentStats.put("incident_datetime", tsp);
                     }
-                    incidentStats.put("incident_type", rs.getString("incident_type"));
-                    incidentStats.put("descryption", rs.getString("description"));
-                    incidentStats.put("severity", rs.getString("severity"));
+                    
+                    incidentStats.put("description", rs.getString("description"));
 
                     incidentData.add(incidentStats);
                 }
@@ -239,9 +256,6 @@ public class DbController{
         } catch (SQLException e) {
             logger.error("Database error in dashboard: ", e);
             ctx.status(500).json(Map.of("error", "Database error", "message", e.getMessage()));
-            return;
         }
-
-
     }
 }

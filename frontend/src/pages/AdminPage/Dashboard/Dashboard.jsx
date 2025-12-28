@@ -148,26 +148,26 @@ export const Dashboard = () => {
                 <div className="incident-list">
                     {incidents.map((incident) => (
                         <div key={incident.incident_id} className="prison-card">
-                                <h2>
-                                    Severity:{" "}
-                                    <span
+                            <h2>
+                                Severity:{" "}
+                                <span
                                     style={{
                                         color: getSeverityColor(incident.severity),
                                         textTransform: "capitalize",
                                     }}
-                                    >
+                                >
                                     {incident.severity}
-                                    </span>
-                                </h2>
+                                </span>
+                            </h2>
                             <div className="card-header">
-                                <h3>Inmate: {incident.criminal_first_name} {incident.criminal_last_name}</h3>
-                                <h3>Officer: {incident.officer_first_name} {incident.officer_last_name}</h3>
+                                <h3>Inmate: {incident.criminal_involved || "N/A"}</h3>
+                                <h3>Officer: {incident.officer_involved || "N/A"}</h3>
                             </div>
-                            <div style={{padding: ".5rem"}}>{incident.descryption}</div>
+                            <div style={{padding: ".5rem"}}>{incident.description}</div>
                             <div className="details">
                                 <span className="label">Prison: </span>{incident.prison_name}
-                                <span className="label">Incident Type: </span> {incident.incident_type}
-                                <span className="lable">Date: </span>{new Date(incident.incident_datetime).toLocaleString()}
+                                <span className="label">Incident Type: </span>{incident.incident_type}
+                                <span className="label">Date: </span>{new Date(incident.incident_datetime).toLocaleString()}
                             </div>
                         </div>
                     ))}

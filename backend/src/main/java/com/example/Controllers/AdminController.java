@@ -4,11 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -21,24 +18,49 @@ import io.github.cdimascio.dotenv.Dotenv;
 import io.javalin.http.Context;
 
 public class AdminController {
-    private static final DataSource ds = DatabaseConfig.getDataSource();
-    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
+    private final DataSource dataSource;
+    private final Logger logger;
+    private final String pathToBackup;
+    private final Dotenv dotenv;
 
-    public static void testAdmin(Context ctx) {
-        try (Connection conn = ds.getConnection()){
+    /**
+     * Constructor with dependency injection for testing.
+     */
+    public AdminController(DataSource dataSource, String backupPath, Dotenv dotenv) {
+        this.dataSource = dataSource;
+        this.logger = LoggerFactory.getLogger(AdminController.class);
+        this.pathToBackup = backupPath;
+        this.dotenv = dotenv;
+    }
+
+    /**
+     * Constructor with DataSource only.
+     */
+    public AdminController(DataSource dataSource) {
+        this(
+            dataSource,
+            System.getenv("BACKUP_PATH") != null ? System.getenv("BACKUP_PATH") : "/app/backups",
+            Dotenv.configure().ignoreIfMissing().load()
+        );
+    }
+
+    /**
+     * Default constructor for production use.
+     */
+    public AdminController() {
+        this(DatabaseConfig.getDataSource());
+    }
+
+    public void testAdmin(Context ctx) {
+        try (Connection conn = dataSource.getConnection()){
             ctx.status(200).result("Hello from backend, admin");
         } catch (Exception e) {
-            logger.error("Couldn't connect to databse: ", e);
+            logger.error("Couldn't connect to database: ", e);
             ctx.status(500).result("Database connection failed: " + e.getMessage());
         }
     }
 
-    private static final String pathToBackup = 
-            System.getenv("BACKUP_PATH") != null 
-                ? System.getenv("BACKUP_PATH") 
-                : "/app/backups";
-
-    public static void getAllBackups(Context ctx) {
+    public void getAllBackups(Context ctx) {
         File backupDir = new File(pathToBackup);
 
         System.out.println("Looking for backups in: " + backupDir.getAbsolutePath());
@@ -60,23 +82,18 @@ public class AdminController {
             .map(File::getName)
             .toArray(String[]::new);
         
-        // Sortuj od najnowszego
         Arrays.sort(files, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
         ctx.status(200).json(fileNames);
     }
 
-    public static void createBackup(Context ctx) {
+    public void createBackup(Context ctx) {
         String filename = "backup_" + java.time.LocalDateTime.now().format(
             java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
         ) + ".sql";
-        Dotenv dotenv = Dotenv.configure()
-            .ignoreIfMissing()
-            .load();
 
-        String fullPath = "/app/backups/" + filename;
+        String fullPath = pathToBackup + "/" + filename;
 
         try {
-            // Komenda pg_dump przez Runtime
             String dbHost = "db";
             String dbPort = "5432";
             String dbName = dotenv.get("POSTGRES_DB") != null ? dotenv.get("POSTGRES_DB") : "prisonflow";
@@ -93,7 +110,6 @@ public class AdminController {
                 "-f", fullPath
             );
 
-            // Ustaw hasło
             pb.environment().put("PGPASSWORD", dbPass);
             pb.redirectErrorStream(true);
 
@@ -132,7 +148,7 @@ public class AdminController {
         }
     }
 
-    public static void restoreBackup(Context ctx){
+    public void restoreBackup(Context ctx){
         String filename = ctx.pathParam("filename");
         
         if (filename == null || filename.isEmpty()) {
@@ -140,17 +156,13 @@ public class AdminController {
             return;
         }
 
-        // Walidacja nazwy pliku (bezpieczeństwo!)
         if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
             ctx.status(400).json(Map.of("message", "Invalid filename"));
             return;
         }
 
-        String fullPath = "/app/backups/" + filename;
+        String fullPath = pathToBackup + "/" + filename;
         File backupFile = new File(fullPath);
-        Dotenv dotenv = Dotenv.configure()
-            .ignoreIfMissing()
-            .load();
 
         if (!backupFile.exists()) {
             ctx.status(404).json(Map.of("message", "Backup file not found"));
@@ -164,15 +176,14 @@ public class AdminController {
             String dbUser = dotenv.get("DB_USER") != null ? dotenv.get("DB_USER") : "postgres";
             String dbPass = dotenv.get("DB_PASS") != null ? dotenv.get("DB_PASS") : "postgres";
 
-            // UWAGA: pg_restore wymaga flagi -c (clean) lub -d (database)
             ProcessBuilder pb = new ProcessBuilder(
                 "pg_restore",
                 "-h", dbHost,
                 "-p", dbPort,
                 "-U", dbUser,
                 "-d", dbName,
-                "-c",  // drop existing objects before restoring
-                "-v",  // verbose
+                "-c",
+                "-v",
                 fullPath
             );
 
@@ -183,7 +194,6 @@ public class AdminController {
             System.out.println("Starting restore from: " + fullPath);
             Process process = pb.start();
 
-            // Przeczytaj output
             BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream())
             );
@@ -218,7 +228,7 @@ public class AdminController {
         }
     }
 
-    public static void removeBackup(Context ctx) {
+    public void removeBackup(Context ctx) {
         String filename = ctx.pathParam("filename");
 
         if (filename == null || filename.isEmpty()) {
@@ -226,13 +236,12 @@ public class AdminController {
             return;
         }
 
-        // Bezpieczeństwo – blokada traversalu
         if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
             ctx.status(400).json(Map.of("message", "Invalid filename"));
             return;
         }
 
-        String fullPath = "/app/backups/" + filename;
+        String fullPath = pathToBackup + "/" + filename;
         File file = new File(fullPath);
 
         if (!file.exists()) {

@@ -12,10 +12,11 @@ public class PrisonRoutes {
     public static void register() {
         path("/prison", () -> {
             logger.info("Route to databse built: api/prison");
-            get("/getAllPrisons", PrisonController::getAllPrisons);
-            delete("/deletePrison/{prisonId}", PrisonController::deletePrison);
-            post("/addPrison", PrisonController::addPrison);
-            post("/editPrison/{prisonId}", PrisonController::editPrison);
+            PrisonController prisonController = new PrisonController();
+            get("/getAllPrisons", prisonController::getAllPrisons);
+            delete("/deletePrison/{prisonId}", prisonController::deletePrison);
+            post("/addPrison", prisonController::addPrison);
+            post("/editPrison/{prisonId}", prisonController::editPrison);
         });
     }
 }

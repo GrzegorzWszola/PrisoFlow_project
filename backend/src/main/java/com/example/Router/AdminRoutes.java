@@ -22,12 +22,13 @@ public class AdminRoutes {
     public static void register() {
         path("/admin", () -> {
             logger.info("Route to admin built: api/admin");
-            get("/test", AdminController::testAdmin);
+            AdminController adminController = new AdminController();
+            get("/test", adminController::testAdmin);
             path("/backup", () -> {
-                get("/list", AdminController::getAllBackups);
-                post("/create", AdminController::createBackup);
-                post("/restore/{filename}", AdminController::restoreBackup);
-                post("/remove/{filename}", AdminController::removeBackup);
+                get("/list", adminController::getAllBackups);
+                post("/create", adminController::createBackup);
+                post("/restore/{filename}", adminController::restoreBackup);
+                post("/remove/{filename}", adminController::removeBackup);
             });
         });
     }

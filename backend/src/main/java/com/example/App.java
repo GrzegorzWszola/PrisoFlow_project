@@ -3,6 +3,10 @@ package com.example;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.example.Controllers.AdminController;
+import com.example.Controllers.DbController;
+import com.example.Controllers.PrisonController;
+import com.example.Controllers.UserController;
 import com.example.Router.Router;
 
 import io.github.cdimascio.dotenv.Dotenv;
@@ -51,5 +55,36 @@ public class App {
         Router.configure(app);
 
         app.start("0.0.0.0", 7000);
+    }
+
+    public static Javalin createApp() {
+        Javalin app = Javalin.create(config -> {
+            config.plugins.enableCors(cors -> {
+                cors.add(it -> it.anyHost());
+            });
+        });
+
+        // Zarejestruj wszystkie routy
+        DbController dbController = new DbController();
+        UserController userController = new UserController();
+        PrisonController prisonController = new PrisonController();
+        AdminController adminController = new AdminController();
+
+        app.get("/api/hello", userController::helloMsg);
+        app.post("/api/login", userController::login);
+        app.get("/api/db/health", dbController::checkHealth);
+        app.get("/api/db/dashboard", dbController::dashboard);
+        app.get("/api/prisons", prisonController::getAllPrisons);
+        app.post("/api/prisons", prisonController::addPrison);
+        app.put("/api/prisons/{prisonId}", prisonController::editPrison);
+        app.delete("/api/prisons/{prisonId}", prisonController::deletePrison);
+        app.get("/api/users", userController::getAllUsers);
+        app.post("/api/users", userController::addUser);
+        app.put("/api/users/{userId}", userController::editUser);
+        app.delete("/api/users/{userId}", userController::deleteUser);
+        app.get("/api/admin/test", adminController::testAdmin);
+        app.get("/api/admin/backups", adminController::getAllBackups);
+
+        return app;
     }
 }

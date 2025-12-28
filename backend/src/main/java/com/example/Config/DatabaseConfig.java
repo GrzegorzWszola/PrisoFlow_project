@@ -54,8 +54,18 @@ public class DatabaseConfig {
             "DB_URL", 
             "jdbc:postgresql://localhost:5432/prisonflow"
         ));
-        config.setUsername(System.getenv().getOrDefault("DB_USER", "postgres"));
-        config.setPassword(System.getenv().getOrDefault("DB_PASS", "postgres"));
+        String dbUrl = System.getProperty("db.url", 
+                      System.getenv().getOrDefault("DB_URL", "jdbc:postgresql://localhost:5432/prisonflow"));
+        
+        String dbUser = System.getProperty("db.user", 
+                       System.getenv().getOrDefault("DB_USER", "postgres"));
+        
+        String dbPass = System.getProperty("db.password", 
+                       System.getenv().getOrDefault("DB_PASS", "postgres"));
+
+        config.setJdbcUrl(dbUrl);
+        config.setUsername(dbUser);
+        config.setPassword(dbPass);
         
         // Connection pool settings
         config.setMaximumPoolSize(10);        

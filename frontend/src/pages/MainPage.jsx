@@ -14,6 +14,7 @@ function Main() {
                 <div className="MainPage_Header">
                     <Header/>
                 </div>
+                    {/* <AdminPage/> */}
                 <div className="MainPage_Routes">
                     <Routes>
                         <Route path="/" element={<TestPage />} />

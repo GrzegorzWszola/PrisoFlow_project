@@ -1,0 +1,16 @@
+FROM node:20 AS base
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+
+# Stage 1: Unit Testy (Vitest)
+FROM base AS unit-tests
+ENV VITE_API_URL=http://localhost:7000
+# --run sprawia, że Vitest kończy proces po testach
+CMD ["npm", "run", "test", "--", "--run", "--reporter=verbose"]
+
+FROM base AS e2e-server
+ENV VITE_API_URL=http://localhost:7000
+# Musimy dodać --host, aby Docker wystawił port na zewnątrz
+CMD ["npm", "run", "dev", "--", "--host"]

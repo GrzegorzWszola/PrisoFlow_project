@@ -16,4 +16,15 @@ export default defineConfig({
     },
     host: true,
   },
+  test: {
+    globals: true, 
+    environment: 'happy-dom', 
+    setupFiles: './src/setupTests.js',
+    exclude: [
+      '**/node_modules/**', 
+      '**/dist/**', 
+      'tests/**',      // Wyklucza folder tests w głównym katalogu
+      'src/tests/**'   // Wyklucza folder tests w src
+    ],
+  },
 })
