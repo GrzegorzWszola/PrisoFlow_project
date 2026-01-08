@@ -54,7 +54,8 @@ public class App {
         // Initialize router to route the traffic
         Router.configure(app);
 
-        app.start("0.0.0.0", 7000);
+        int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "7000"));
+        app.start("0.0.0.0", port);
     }
 
     public static Javalin createApp() {
